@@ -1,0 +1,459 @@
+import os
+import sys
+import subprocess
+import re
+import time
+import json
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import quote
+from colorama import Fore, Style, init
+from tqdm import tqdm
+import phonenumbers
+from phonenumbers import geocoder, carrier, number_type
+
+# Otomatik kütüphane kurulumu
+def install_libraries(packages):
+    """Gerekli kütüphaneleri kontrol eder ve eksik olanları kurar."""
+    for package in packages:
+        try:
+            __import__(package)
+            print(f"{Fore.GREEN}'{package}' zaten yüklü, devam ediyoruz...{Style.RESET_ALL}")
+        except ImportError:
+            print(f"{Fore.YELLOW}'{package}' eksik, kuruyorum...{Style.RESET_ALL}")
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+                print(f"{Fore.GREEN}'{package}' başarıyla kuruldu!{Style.RESET_ALL}")
+            except subprocess.CalledProcessError:
+                print(f"{Fore.RED}'{package}' kurulamadı. İnternet bağlantınızı kontrol edin!{Style.RESET_ALL}")
+                sys.exit(1)
+
+# Gerekli kütüphaneler
+required_libraries = ["phonenumbers", "colorama", "tqdm", "requests", "beautifulsoup4"]
+install_libraries(required_libraries)
+
+init(autoreset=True)
+
+# Dil desteği
+LANGUAGES = {
+    "tr": {
+        "welcome": "Merhaba! SoytariNumber ile numaraların sırlarını çözmeye hazır mıyız? 🚀",
+        "menu": "=== SoytariNumber Menü ===\n1) Numara sorgula\n2) Toplu numara analizi\n3) Raporları görüntüle\n4) Ayarlar\n5) Çıkış\nSeçimini yap: ",
+        "invalid_choice": "Geçersiz seçim, lütfen 1-5 arası bir sayı gir! 😅",
+        "enter_number": "Numarayı uluslararası formatta gir (+905301234567 gibi): ",
+        "invalid_number": "Hatalı format! Lütfen '+905301234567' gibi gir. 🚫",
+        "analyzing": "Numara analiz ediliyor...",
+        "report_saved": "Rapor kaydedildi: {}",
+        "no_reports": "Hiç rapor bulunamadı! 😕",
+        "goodbye": "Güle güle dostum, numaraların sırlarını çözmek güzeldi! 👋",
+        "settings": "=== Ayarlar ===\n1) Dil seç (TR/EN/ES)\n2) Tema seç (Karanlık/Neon/Pastel)\n3) Geri\nSeçim: ",
+        "language_selected": "Dil seçildi: {}",
+        "theme_selected": "Tema seçildi: {}",
+    },
+    "en": {
+        "welcome": "Hello! Ready to uncover the secrets of numbers with SoytariNumber? 🚀",
+        "menu": "=== SoytariNumber Menu ===\n1) Analyze number\n2) Bulk number analysis\n3) View reports\n4) Settings\n5) Exit\nYour choice: ",
+        "invalid_choice": "Invalid choice, please enter a number between 1-5! 😅",
+        "enter_number": "Enter the number in international format (+905301234567): ",
+        "invalid_number": "Invalid format! Please enter like '+905301234567'. 🚫",
+        "analyzing": "Analyzing number...",
+        "report_saved": "Report saved: {}",
+        "no_reports": "No reports found! 😕",
+        "goodbye": "Goodbye friend, it was fun cracking number secrets! 👋",
+        "settings": "=== Settings ===\n1) Select language (TR/EN/ES)\n2) Select theme (Dark/Neon/Pastel)\n3) Back\nChoice: ",
+        "language_selected": "Language selected: {}",
+        "theme_selected": "Theme selected: {}",
+    },
+    "es": {
+        "welcome": "¡Hola! ¿Listo para descubrir los secretos de los números con SoytariNumber? 🚀",
+        "menu": "=== Menú de SoytariNumber ===\n1) Analizar número\n2) Análisis de números en masa\n3) Ver informes\n4) Configuraciones\n5) Salir\nTu elección: ",
+        "invalid_choice": "¡Elección inválida, por favor ingresa un número entre 1-5! 😅",
+        "enter_number": "Ingresa el número en formato internacional (+905301234567): ",
+        "invalid_number": "¡Formato inválido! Por favor ingresa como '+905301234567'. 🚫",
+        "analyzing": "Analizando número...",
+        "report_saved": "Informe guardado: {}",
+        "no_reports": "¡No se encontraron informes! 😕",
+        "goodbye": "¡Adiós amigo, fue divertido descifrar los secretos de los números! 👋",
+        "settings": "=== Configuraciones ===\n1) Seleccionar idioma (TR/EN/ES)\n2) Seleccionar tema (Oscuro/Neón/Pastel)\n3) Volver\nElección: ",
+        "language_selected": "Idioma seleccionado: {}",
+        "theme_selected": "Tema seleccionado: {}",
+    }
+}
+
+# Tema desteği
+THEMES = {
+    "dark": {"primary": Fore.BLUE, "highlight": Fore.CYAN, "error": Fore.RED, "success": Fore.GREEN},
+    "neon": {"primary": Fore.MAGENTA, "highlight": Fore.YELLOW, "error": Fore.RED, "success": Fore.GREEN},
+    "pastel": {"primary": Fore.LIGHTBLUE_EX, "highlight": Fore.LIGHTYELLOW_EX, "error": Fore.LIGHTRED_EX, "success": Fore.LIGHTGREEN_EX}
+}
+
+# Ayarlar
+settings = {"language": "tr", "theme": "dark"}
+
+# Offline veri tabanları
+OPERATORS = {
+    "9053": "Turkcell",
+    "9054": "Vodafone",
+    "9055": "Türk Telekom",
+    "9050": "Vodafone",
+    "9059": "Türk Telekom",
+    "9056": "Turkcell",
+    "9057": "Vodafone",
+}
+
+AREA_CODES_TR = {
+    "212": "İstanbul (Avrupa Yakası)",
+    "216": "İstanbul (Anadolu Yakası)",
+    "232": "İzmir",
+    "312": "Ankara",
+    "352": "Konya",
+    "242": "Antalya",
+    "262": "Kocaeli",
+    "332": "Konya",
+}
+
+NUM_TYPE_MAP = {
+    0: {"tr": "Bilinmeyen numara, tam bir muamma!", "en": "Unknown number, a total mystery!", "es": "¡Número desconocido, un misterio total!"},
+    1: {"tr": "Mobil numara, her zaman cebinde!", "en": "Mobile number, always in your pocket!", "es": "¡Número móvil, siempre en tu bolsillo!"},
+    2: {"tr": "Sabit hat, nostalji sevenler için!", "en": "Landline, for nostalgia lovers!", "es": "¡Línea fija, para amantes de la nostalgia!"},
+    7: {"tr": "VoIP numarası, teknoloji meraklısı!", "en": "VoIP number, tech enthusiast!", "es": "¡Número VoIP, entusiasta de la tecnología!"},
+}
+
+SPAM_PREFIXES = ["+4470", "+1202", "+1900"]  # Örnek spam prefix'leri
+
+# Ekran temizleme
+def clear_screen():
+    """Terminal ekranını temizler."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+# Yavaş yazdırma
+def slow_print(text, delay=0.02, color=Fore.WHITE):
+    """Metni yavaşça yazdırır."""
+    for char in text:
+        print(f"{color}{char}{Style.RESET_ALL}", end='', flush=True)
+        time.sleep(delay)
+    print()
+
+# Havalı açılış ekranı
+def show_welcome():
+    """Animasyonlu açılış ekranı gösterir."""
+    clear_screen()
+    ascii_art = """
+    ╔════════════════════════════════════════════╗
+    ║                                            ║
+    ║   SoytariNumber - Numara Dedektifi 🕵️‍♂️   ║
+    ║   Telefon Numaralarının Sırlarını Çöz!     ║
+    ║                                            ║
+    ╚════════════════════════════════════════════╝
+    """
+    theme = THEMES[settings["theme"]]
+    for line in ascii_art.splitlines():
+        print(f"{theme['primary']}{line}{Style.RESET_ALL}")
+        time.sleep(0.15)
+    slow_print(LANGUAGES[settings["language"]]["welcome"], 0.03, theme["highlight"])
+    time.sleep(1)
+
+# Ülke bayrağı
+def get_flag(country_code):
+    """Ülke koduna göre bayrak emojisi üretir."""
+    OFFSET = 127397
+    try:
+        return ''.join(chr(ord(c) + OFFSET) for c in country_code.upper())
+    except:
+        return ""
+
+# Operatör tahmini
+def guess_operator(number):
+    """Numara prefix'ine göre operatör tahmini yapar."""
+    for prefix, op in OPERATORS.items():
+        if number.startswith(prefix):
+            return op
+    return LANGUAGES[settings["language"]]["en"].get("unknown_operator", "Unknown operator")
+
+# Bölge tahmini
+def guess_area(number):
+    """Türkiye için numara koduna göre bölge tahmini yapar."""
+    for code, area in AREA_CODES_TR.items():
+        if number.startswith(code):
+            return area
+    return LANGUAGES[settings["language"]]["en"].get("unknown_area", "Unknown area")
+
+# Numara formatlama
+def format_number(number):
+    """Numarayı uluslararası formata dönüştürür."""
+    number = re.sub(r'[\s\-\(\)]', '', number)  # Boşluk, tire, parantez kaldır
+    if not number.startswith('+'):
+        number = '+' + number
+    return number if validate_number(number) else None
+
+# Numara geçerlilik kontrolü
+def validate_number(num):
+    """Numaranın uluslararası formatta olup olmadığını kontrol eder."""
+    pattern = re.compile(r'^\+\d{7,15}$')
+    return bool(pattern.match(num))
+
+# WhatsApp tahmini
+def guess_whatsapp(number, country_code, num_type):
+    """Numaranın WhatsApp kullanma olasılığını tahmin eder."""
+    lang = settings["language"]
+    if num_type == 1:
+        if country_code == "TR":
+            return LANGUAGES[lang]["en"].get("whatsapp_high", "High chance of WhatsApp usage! 📱")
+        return LANGUAGES[lang]["en"].get("whatsapp_likely", "Likely using WhatsApp! 🌍")
+    elif num_type == 7:
+        return LANGUAGES[lang]["en"].get("whatsapp_unlikely", "VoIP number, unlikely to use WhatsApp. 🤔")
+    return LANGUAGES[lang]["en"].get("whatsapp_uncertain", "Might use WhatsApp, but uncertain!")
+
+# Sosyal medya tahmini
+def guess_social_media(num_type):
+    """Numara türüne göre sosyal medya tahmini yapar."""
+    lang = settings["language"]
+    if num_type == 1:
+        return LANGUAGES[lang]["en"].get("social_media_likely", "Likely on Telegram, Signal, or WhatsApp!")
+    elif num_type == 7:
+        return LANGUAGES[lang]["en"].get("social_media_voip", "VoIP number, possibly on Skype or Discord.")
+    return LANGUAGES[lang]["en"].get("social_media_uncertain", "Social media usage unclear.")
+
+# Spam skoru hesaplama
+def calculate_spam_score(number, online_results):
+    """Numaranın spam/dolandırıcılık olasılığını hesaplar."""
+    score = 100
+    if any(number.startswith(prefix) for prefix in SPAM_PREFIXES):
+        score -= 50
+    if "şikayet" in online_results.lower() or "spam" in online_results.lower() or "dolandırıcılık" in online_results.lower():
+        score -= 30
+    return max(0, score)
+
+# İnternet araması
+def search_number_online(number):
+    """Numarayı internette arar."""
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124"}
+        search_query = quote(number)
+        url = f"https://www.google.com/search?q={search_query}"
+        response = requests.get(url, headers=headers, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+        results = []
+        for g in soup.find_all('div', class_='g'):
+            title = g.find('h3')
+            snippet = g.find('div', class_='VwiC3b')
+            if title and snippet:
+                results.append(f"Başlık: {title.text}\nAçıklama: {snippet.text[:100]}...")
+        return "\n".join(results[:3]) or "No results found."
+    except Exception as e:
+        return f"Search error: {str(e)}"
+
+# Numara türü açıklaması
+def get_number_type_desc(num_type):
+    """Numara türünü açıklar."""
+    return NUM_TYPE_MAP.get(num_type, {"tr": "Bilinmeyen numara!", "en": "Unknown number!", "es": "¡Número desconocido!"})[settings["language"]]
+
+# JSON veritabanı
+def save_to_db(number, details):
+    """Numara analizini JSON veritabanına kaydeder."""
+    db_file = "number_db.json"
+    data = {}
+    if os.path.exists(db_file):
+        with open(db_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    data[number] = details
+    with open(db_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def get_from_db(number):
+    """Numarayı JSON veritabanından getirir."""
+    db_file = "number_db.json"
+    if os.path.exists(db_file):
+        with open(db_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get(number)
+    return None
+
+# Rapor kaydetme
+def save_report(number, details):
+    """Analiz sonuçlarını metin dosyasına kaydeder."""
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    filename = f"numara_raporu_{timestamp}.txt"
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("=== SoytariNumber Analiz Raporu ===\n")
+        f.write(f"Tarih: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        for key, value in details.items():
+            f.write(f"{key}: {value}\n")
+    return filename
+
+# PDF raporlama (LaTeX)
+def save_pdf_report(number, details):
+    """Analiz sonuçlarını PDF olarak kaydeder."""
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    filename = f"numara_raporu_{timestamp}.tex"
+    content = r"""
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\begin{document}
+\section*{SoytariNumber Analiz Raporu}
+\textbf{Tarih:} """ + time.strftime("%Y-%m-%d %H:%M:%S") + r""" \\
+\begin{tabular}{ll}
+\toprule
+\textbf{Kategori} & \textbf{Değer} \\
+\midrule
+"""
+    for key, value in details.items():
+        content += f"{key} & {value.replace('&', '\&')} \\\\ \n"
+    content += r"""
+\bottomrule
+\end{tabular}
+\end{document}
+"""
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(content)
+    try:
+        subprocess.check_call(["latexmk", "-pdf", filename])
+        return f"numara_raporu_{timestamp}.pdf"
+    except:
+        return None
+
+# Çoklu numara analizi
+def analyze_bulk_numbers(filename):
+    """Metin dosyasındaki numaraları analiz eder."""
+    lang = settings["language"]
+    theme = THEMES[settings["theme"]]
+    if not os.path.exists(filename):
+        return LANGUAGES[lang]["en"].get("file_not_found", "File not found!")
+    numbers = []
+    with open(filename, "r", encoding="utf-8") as f:
+        numbers = [line.strip() for line in f if line.strip()]
+    results = []
+    for number in numbers:
+        formatted_number = format_number(number)
+        if not formatted_number:
+            results.append(f"{number}: {LANGUAGES[lang]['invalid_number']}")
+            continue
+        details = analyze_single_number(formatted_number)
+        results.append(f"{number}:\n" + "\n".join(f"{key}: {value}" for key, value in details.items()))
+    return "\n\n".join(results)
+
+# Tek numara analizi
+def analyze_single_number(number):
+    """Tek bir numarayı analiz eder."""
+    try:
+        parsed = phonenumbers.parse(number)
+    except phonenumbers.phonenumberutil.NumberParseException as e:
+        return {"Hata": str(e)}
+    
+    country_code = phonenumbers.region_code_for_number(parsed)
+    country_name = geocoder.description_for_number(parsed, settings["language"])
+    operator = carrier.name_for_number(parsed, settings["language"])
+    num_type_code = number_type(parsed)
+    num_type_desc = get_number_type_desc(num_type_code)
+    flag = get_flag(country_code) if country_code else ""
+    whatsapp_guess = guess_whatsapp(number, country_code, num_type_code)
+    social_media_guess = guess_social_media(num_type_code)
+    online_results = search_number_online(number)
+    spam_score = calculate_spam_score(number, online_results)
+    area = guess_area(number[3:6]) if country_code == "TR" else "N/A"
+    
+    details = {
+        "Numara": number,
+        "Ülke": f"{country_name} {flag}",
+        "Operatör (Kütüphane)": operator or "Bilinmiyor",
+        "Operatör (Tahmin)": guess_operator(number[1:5]),
+        "Numara Tipi": num_type_desc,
+        "Bölge": area,
+        "WhatsApp Olasılığı": whatsapp_guess,
+        "Sosyal Medya Tahmini": social_media_guess,
+        "İnternet Araması": online_results,
+        "Spam Skoru": f"{spam_score}/100"
+    }
+    save_to_db(number, details)
+    return details
+
+# Menü ekranı
+def show_menu():
+    """Kullanıcı menüsünü gösterir."""
+    clear_screen()
+    theme = THEMES[settings["theme"]]
+    print(f"{theme['primary']}=== SoytariNumber Menü ==={Style.RESET_ALL}")
+    print(LANGUAGES[settings["language"]]["menu"], end="")
+
+# Ayarlar menüsü
+def show_settings():
+    """Ayarlar menüsünü gösterir."""
+    lang = settings["language"]
+    theme = THEMES[settings["theme"]]
+    while True:
+        clear_screen()
+        print(f"{theme['primary']}{LANGUAGES[lang]['settings']}{Style.RESET_ALL}")
+        choice = input().strip()
+        if choice == "1":
+            new_lang = input("Dil seç (TR/EN/ES): ").strip().lower()
+            if new_lang in LANGUAGES:
+                settings["language"] = new_lang
+                print(f"{theme['success']}{LANGUAGES[lang]['language_selected'].format(new_lang.upper())}{Style.RESET_ALL}")
+            else:
+                print(f"{theme['error']}Geçersiz dil!{Style.RESET_ALL}")
+        elif choice == "2":
+            new_theme = input("Tema seç (Dark/Neon/Pastel): ").strip().lower()
+            if new_theme in THEMES:
+                settings["theme"] = new_theme
+                print(f"{theme['success']}{LANGUAGES[lang]['theme_selected'].format(new_theme.capitalize())}{Style.RESET_ALL}")
+            else:
+                print(f"{theme['error']}Geçersiz tema!{Style.RESET_ALL}")
+        elif choice == "3":
+            break
+        input("Devam için Enter'a bas...")
+
+# Ana program
+def main():
+    show_welcome()
+    while True:
+        show_menu()
+        theme = THEMES[settings["theme"]]
+        choice = input().strip()
+        lang = settings["language"]
+        if choice == "1":
+            number = input(f"\n{theme['primary']}{LANGUAGES[lang]['enter_number']}{Style.RESET_ALL}").strip()
+            formatted_number = format_number(number)
+            if not formatted_number:
+                print(f"{theme['error']}{LANGUAGES[lang]['invalid_number']}{Style.RESET_ALL}")
+                input("Devam için Enter'a bas...")
+                continue
+            print(f"\n{theme['primary']}{LANGUAGES[lang]['analyzing']}{Style.RESET_ALL}")
+            for _ in tqdm(range(10), desc="Analiz", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}", colour="green"):
+                time.sleep(0.1)
+            details = analyze_single_number(formatted_number)
+            print(f"\n{theme['primary']}=== Analiz Sonuçları ==={Style.RESET_ALL}")
+            for key, value in details.items():
+                print(f"{theme['success']}{key}: {Style.BRIGHT}{value}{Style.RESET_ALL}")
+            report_file = save_report(formatted_number, details)
+            pdf_file = save_pdf_report(formatted_number, details)
+            print(f"\n{theme['success']}{LANGUAGES[lang]['report_saved'].format(report_file)}{Style.RESET_ALL}")
+            if pdf_file:
+                print(f"{theme['success']}PDF Rapor: {pdf_file}{Style.RESET_ALL}")
+            input("Devam için Enter'a bas...")
+        elif choice == "2":
+            filename = input(f"\n{theme['primary']}Numara listesi dosyasını gir (örn. numerolar.txt): {Style.RESET_ALL}").strip()
+            print(f"\n{theme['primary']}{LANGUAGES[lang]['analyzing']}{Style.RESET_ALL}")
+            results = analyze_bulk_numbers(filename)
+            print(f"\n{theme['primary']}=== Toplu Analiz Sonuçları ==={Style.RESET_ALL}")
+            print(results)
+            input("Devam için Enter'a bas...")
+        elif choice == "3":
+            print(f"\n{theme['primary']}=== Kaydedilmiş Raporlar ==={Style.RESET_ALL}")
+            reports = [f for f in os.listdir() if f.startswith("numara_raporu_") and f.endswith(".txt")]
+            print("\n".join(f"{i+1}. {report}" for i, report in enumerate(reports)) or LANGUAGES[lang]["no_reports"])
+            input9            input("Devam için Enter'a bas...")
+        elif choice == "4":
+            show_settings()
+        elif choice == "5":
+            slow_print(LANGUAGES[lang]["goodbye"], 0.04, theme["highlight"])
+            break
+        else:
+            print(f"{theme['error']}{LANGUAGES[lang]['invalid_choice']}{Style.RESET_ALL}")
+            input("Devam için Enter'a bas...")
+
+if __name__ == "__main__":
+    main()
