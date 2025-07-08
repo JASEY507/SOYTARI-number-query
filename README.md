@@ -36,6 +36,7 @@ Komut:
 
 ---
 git clone https://github.com/JASEY507/SOYTARI-number-query.git
+--
 cd SOYTARI-number-query
 --
 
@@ -46,6 +47,7 @@ Komut:
 ---
 rm -rf SOYTARI-number-query
 git clone https://github.com/JASEY507/SOYTARI-number-query.git
+--
 cd SOYTARI-number-query
 ----
 
