@@ -41,7 +41,7 @@ cd ~ && rm -rf SOYTARI-number-query && git clone https://github.com/JASEY507/SOY
 Sonrasında Projeyi Çalıştırmak İçin:
 
 -----
-python3 python code
+python3 'python code'
 ---
 
  
