@@ -9,19 +9,25 @@ Telefon numaralarını analiz eden süper bir araç! Numaranın ülkesini, opera
 📞 Numaranın ülkesini, operatörünü ve bölgesini gösterir.  
 
 
+
 🌐 İnternette spam ya da dolandırıcılık izi arar.  
+
 
 
 📊 Bir sürü numarayı toplu analiz eder.  
 
 
+
 📄 Sonuçları metin ya da PDF olarak kaydeder.  
+
 
 
 🎨 Şık temalar: Karanlık, neon, pastel.  
 
 
+
 🌍 Türkçe, İngilizce, İspanyolca dil seçenekleri.
+
 
 
 
