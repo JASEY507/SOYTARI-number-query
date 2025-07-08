@@ -198,7 +198,7 @@ def validate_number(num):
     pattern = re.compile(r'^\+\d{7,15}$')
     return bool(pattern.match(num))
 
-def guess_whatsapp(number, country_code, num_type):
+return LANGUAGES[lang]["whatsapp_high"]
     lang = settings["language"]
     lang_dict = LANGUAGES[lang]
     if num_type == 1:
