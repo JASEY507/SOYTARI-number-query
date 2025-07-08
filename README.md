@@ -46,7 +46,9 @@ Hata Çözümü:
 
 
 rm -rf SOYTARI-number-query
+-
 git clone https://github.com/JASEY507/SOYTARI-number-query.git
+-
 cd SOYTARI-number-query
 ---------
 
@@ -56,7 +58,9 @@ Kütüphaneleri sistemine bulaştırmamak için sanal ortam kullanıyoruz. Bu, h
 
 
 ---
+
 python3 -m venv soytari_venv
+--
 source soytari_venv/bin/activate
 --
 
@@ -91,6 +95,7 @@ Linux için:
 
 ----
 sudo apt update
+-
 sudo apt install texlive-latex-base latexmk
 ---
 
