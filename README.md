@@ -44,7 +44,7 @@ Sonrasında Projeyi Çalıştırmak İçin:
 python3 'python code'
 ---
  ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ 
-Bu Projede Bir Hata Yada Eklenmesini İstedğiniz Birşey Varsa  İnstagram: @soytariomer.17
+Bu Projede Bir Hata Yada Eklenmesini İstedğiniz Birşey Varsa İnstagram: @soytariomer.17
 
 
 
@@ -55,8 +55,7 @@ Bu Projede Bir Hata Yada Eklenmesini İstedğiniz Birşey Varsa  İnstagram: @so
 
 
 
-
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
