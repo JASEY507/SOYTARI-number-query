@@ -242,6 +242,23 @@ def search_number_online(number):
     except Exception as e:
         return f"Search error: {str(e)}"
 
+def phoneinfoga_style_search(number):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124"}
+        # Örnek bir OSINT sitesi (who-called tarzı)
+        search_query = number.replace('+', '')  # + işaretini kaldır
+        url = f"https://www.who-called.co.uk/number/{search_query}"
+        response = requests.get(url, headers=headers, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+        # Örnek veri çekme (site yapısına göre değişir)
+        comments = soup.find_all('div', class_='comment')
+        if comments:
+            results = [comment.text.strip()[:100] + "..." for comment in comments[:2]]
+            return f"PhoneInfoga tarzı sonuç: {' | '.join(results)}"
+        return "PhoneInfoga tarzı sonuç: Yorum bulunamadı."
+    except Exception as e:
+        return f"PhoneInfoga tarzı sorgu hatası: {str(e)}"
+
 def get_number_type_desc(num_type):
     return NUM_TYPE_MAP.get(num_type, {"tr": "Bilinmeyen numara!", "en": "Unknown number!", "es": "¡Número desconocido!"})[settings["language"]]
 
@@ -290,6 +307,8 @@ def analyze_single_number(number):
     online_results = search_number_online(number)
     spam_score = calculate_spam_score(number, online_results)
     area = guess_area(number[3:6]) if country_code == "TR" else "N/A"
+    # PhoneInfoga tarzı ek sorgu
+    phoneinfoga_results = phoneinfoga_style_search(number)
 
     details = {
         "Numara": number,
@@ -301,7 +320,8 @@ def analyze_single_number(number):
         "WhatsApp Olasılığı": whatsapp_guess,
         "Sosyal Medya Tahmini": social_media_guess,
         "İnternet Arama Sonuçları": online_results[:500] + ("..." if len(online_results)>500 else ""),
-        "Spam Puanı (0-100)": spam_score
+        "Spam Puanı (0-100)": spam_score,
+        "PhoneInfoga Tarzı Sonuç": phoneinfoga_results
     }
 
     save_to_db(number, details)
