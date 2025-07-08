@@ -1,149 +1,67 @@
- SOYTARI number-query
-Telefon Numarası Sorgu Aracı  Phone Number Search Tool
+SoytariNumber 🕵️‍♂️
 
+Telefon numaralarının sırlarını çözmek için geliştirilmiş kullanıcı dostu bir araç! SoytariNumber ile numaraları analiz edebilir, operatör, bölge ve spam riski gibi detayları öğrenebilirsiniz.
 
-Kali Linux ve diğer Linux dağıtımları için önce terminalde sistemi güncellemek için
-
-
-
---------------------------------------------------
-sudo apt update && sudo apt upgrade -y
-
-
-
---------------------------------------------------
-
-
-
-Python ve pip’i yüklemek için:
+Özellikler
 
 
 
 
-----------------------------------------
-sudo apt install python3 python3-pip -y
+---
+📞 Numara Sorgulama: Ülke, operatör, numara türü (mobil/sabit) ve bölge bilgilerini öğrenin.
+---
+
+--
+🌐 İnternet Araması: Numaranın spam veya dolandırıcılık geçmişini kontrol edin.
+--
+
+--
+📊 Toplu Analiz: Birden fazla numarayı tek seferde analiz edin.
+--
+
+--
+📄 Raporlama: Sonuçları metin veya PDF olarak kaydedin.
+-
 -
 
+🌍 Çoklu Dil Desteği: Türkçe, İngilizce ve İspanyolca arayüz.
+-
+-
 
+🎨 Tema Seçenekleri: Karanlık, neon veya pastel temalarla tarzınızı yansıtın.
+-
+Kurulum
+--
 
 
 
 
+Depoyu klonlayın: git clone https://github.com/JASEY507/SOYTARI-number-query.git
 
 
-----------------------------------------
 
+Gerekli kütüphaneleri yükleyin: pip install -r requirements.txt
 
 
-Gerekli Python paketlerini kurmak için:
 
+Programı çalıştırın: python soytari_number.py
 
+Kullanım
 
 
--------------------------------------------------------------------------
-pip3 install phonenumbers colorama tqdm requests beautifulsoup4
 
 
 
+Programı başlatın ve menüden istediğiniz özelliği seçin.
 
---------------------------------------------------------------------------
 
 
+Tek bir numarayı sorgulayın veya bir dosyaya yazdığınız numaraları toplu analiz edin.
 
-Projeyi klonlamak için:
 
 
+Raporlar otomatik olarak kaydedilir, sonuçları dilediğiniz zaman inceleyin!
 
+Katkıda Bulunun
 
----------------------------------------------------------------
-git clone https://github.com/JASEY507/SOYTARI-number-query.git
-
-
-
-
-
-
-----------------------------------------------------------------
-
-
-Klasöre girmek için:
-
-
-
-
-
------------------------
-
-cd SOYTARI-number-query
-
-
-
-
-
-------------------------
-
-
-
-Programı başlatmak için:
-
-----------------------------------
-python3 soytarinumber.py
-
-
-
-
-
----------------------------------
-
-
-
-Termux’ta ise sırasıyla:
-
-
-
-
-
-----------------------------------
-pkg update && pkg upgrade -y
-
-
-
-
-
----------------------------------
-pkg install python git -y
-
-
-
-
-
------------------------------
-pip install --upgrade pip
-
-
-
-
-----------------------------
-pip install phonenumbers colorama tqdm requests beautifulsoup4
-
-
-
-
-
-
-
----------------------------------------------------------------
-git clone https://github.com/JASEY507/SOYTARI-number-query.git
-
-
-
-
-------------------------------------------------------------------
-
-cd SOYTARI-number-query
-
-
-python soytarinumber.py
-
-
-Pydroid’te ise modülleri elle kurup dosyayı açarak çalıştırman yeterli.
+Fikirleriniz ve katkılarınız bizim için değerli! Hata bildirimi veya yeni özellik önerisi için issue açabilirsiniz.
