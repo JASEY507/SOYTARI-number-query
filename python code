@@ -32,7 +32,6 @@ install_libraries(required_libraries)
 
 init(autoreset=True)
 
-# Dil ve Tema ayarları
 LANGUAGES = {
     "tr": {
         "welcome": "Selam! SoytariNumber ile numaraların sırlarını çözeceğiz, hazır mısın? 🚀",
@@ -158,13 +157,13 @@ def slow_print(text, delay=0.02, color=Fore.WHITE):
 def show_welcome():
     clear_screen()
     ascii_art = """
-    ╔════════════════════════════════════════════╗
-    ║                                            ║
-    ║   SoytariNumber - Numara Dedektifi 🕵️‍♂️   ║
-    ║   Telefon Numaralarının Sırlarını Çöz!     ║
-    ║                                            ║
-    ╚════════════════════════════════════════════╝
-    """
+╔════════════════════════════════════════════╗
+║                                            ║
+║   SoytariNumber - Numara Dedektifi 🕵️‍♂️   ║
+║   Telefon Numaralarının Sırlarını Çöz!     ║
+║                                            ║
+╚════════════════════════════════════════════╝
+"""
     theme = THEMES[settings["theme"]]
     for line in ascii_art.splitlines():
         print(f"{theme['primary']}{line}{Style.RESET_ALL}")
@@ -198,7 +197,7 @@ def validate_number(num):
     pattern = re.compile(r'^\+\d{7,15}$')
     return bool(pattern.match(num))
 
-return LANGUAGES[lang]["whatsapp_high"]
+def guess_whatsapp(number, country_code, num_type):
     lang = settings["language"]
     lang_dict = LANGUAGES[lang]
     if num_type == 1:
@@ -301,105 +300,75 @@ def analyze_single_number(number):
         "Bölge": area,
         "WhatsApp Olasılığı": whatsapp_guess,
         "Sosyal Medya Tahmini": social_media_guess,
-        "İnternet Araması": online_results,
-        "Spam Skoru": f"{spam_score}/100"
+        "İnternet Arama Sonuçları": online_results[:500] + ("..." if len(online_results)>500 else ""),
+        "Spam Puanı (0-100)": spam_score
     }
+
     save_to_db(number, details)
+    report_file = save_report(number, details)
+    theme = THEMES[settings["theme"]]
+    slow_print(f"{theme['success']}[✔] {LANGUAGES[settings['language']]['report_saved'].format(report_file)}", color=theme["success"])
     return details
-
-def show_menu():
-    clear_screen()
-    theme = THEMES[settings["theme"]]
-    print(f"{theme['primary']}=== SoytariNumber Menü ==={Style.RESET_ALL}")
-    print(LANGUAGES[settings["language"]]["menu"], end="")
-
-def show_settings():
-    lang = settings["language"]
-    theme = THEMES[settings["theme"]]
-    while True:
-        clear_screen()
-        print(f"{theme['primary']}{LANGUAGES[lang]['settings']}{Style.RESET_ALL}")
-        choice = input().strip()
-        if choice == "1":
-            new_lang = input("Dil seç (TR/EN/ES): ").strip().lower()
-            if new_lang in LANGUAGES:
-                settings["language"] = new_lang
-                print(f"{theme['success']}{LANGUAGES[new_lang]['language_selected'].format(new_lang.upper())}{Style.RESET_ALL}")
-            else:
-                print(f"{theme['error']}Geçersiz dil!{Style.RESET_ALL}")
-        elif choice == "2":
-            new_theme = input("Tema seç (Dark/Neon/Pastel): ").strip().lower()
-            if new_theme in THEMES:
-                settings["theme"] = new_theme
-                print(f"{theme['success']}{LANGUAGES[lang]['theme_selected'].format(new_theme.capitalize())}{Style.RESET_ALL}")
-            else:
-                print(f"{theme['error']}Geçersiz tema!{Style.RESET_ALL}")
-        elif choice == "3":
-            break
-        input("Devam etmek için Enter'a bas...")
-
-def analyze_bulk_numbers(filename):
-    lang = settings["language"]
-    theme = THEMES[settings["theme"]]
-    if not os.path.exists(filename):
-        return LANGUAGES[lang]["file_not_found"]
-    numbers = []
-    with open(filename, "r", encoding="utf-8") as f:
-        numbers = [line.strip() for line in f if line.strip()]
-    results = []
-    for number in numbers:
-        formatted_number = format_number(number)
-        if not formatted_number:
-            results.append(f"{number}: {LANGUAGES[lang]['invalid_number']}")
-            continue
-        details = analyze_single_number(formatted_number)
-        results.append(f"{number}:\n" + "\n".join(f"{key}: {value}" for key, value in details.items()))
-    return "\n\n".join(results)
 
 def main():
     show_welcome()
     while True:
-        theme = THEMES[settings["theme"]]
-        print(f"{theme['primary']}{LANGUAGES[settings['language']]['menu']}{Style.RESET_ALL}", end="")
-        choice = input().strip()
-        if choice == "1":
-            number = input(LANGUAGES[settings["language"]]["enter_number"])
-            formatted = format_number(number)
-            if not formatted:
-                print(f"{theme['error']}{LANGUAGES[settings['language']]['invalid_number']}{Style.RESET_ALL}")
+        choice = input(THEMES[settings["theme"]]["primary"] + LANGUAGES[settings["language"]]["menu"] + Style.RESET_ALL).strip()
+        if choice == '1':
+            num = input(LANGUAGES[settings["language"]]["enter_number"])
+            num = format_number(num)
+            if not num:
+                print(Fore.RED + LANGUAGES[settings["language"]]["invalid_number"])
                 continue
-            print(f"{theme['highlight']}{LANGUAGES[settings['language']]['analyzing']}{Style.RESET_ALL}")
-            details = analyze_single_number(formatted)
+            print(LANGUAGES[settings["language"]]["analyzing"])
+            details = analyze_single_number(num)
             for k, v in details.items():
-                print(f"{theme['primary']}{k}: {theme['highlight']}{v}{Style.RESET_ALL}")
-            save_path = save_report(formatted, details)
-            print(f"{theme['success']}{LANGUAGES[settings['language']]['report_saved'].format(save_path)}{Style.RESET_ALL}")
+                print(f"{k}: {v}")
             input("Devam etmek için Enter'a bas...")
-        elif choice == "2":
-            fname = input("Toplu numara dosyasının adı (ör: numbers.txt): ")
-            bulk_result = analyze_bulk_numbers(fname)
-            print(bulk_result)
-            input("Devam etmek için Enter'a bas...")
-        elif choice == "3":
+        elif choice == '2':
+            print("Toplu analiz modu şu an yok (geliyor)...")
+            time.sleep(1)
+        elif choice == '3':
             db_file = "number_db.json"
             if not os.path.exists(db_file):
-                print(f"{theme['error']}{LANGUAGES[settings['language']]['no_reports']}{Style.RESET_ALL}")
-                input("Devam etmek için Enter'a bas...")
+                print(Fore.YELLOW + LANGUAGES[settings["language"]]["no_reports"])
                 continue
             with open(db_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            for num, info in data.items():
-                print(f"\n{theme['highlight']}Numara: {num}{Style.RESET_ALL}")
-                for key, val in info.items():
-                    print(f"{theme['primary']}{key}: {val}{Style.RESET_ALL}")
+            if not data:
+                print(Fore.YELLOW + LANGUAGES[settings["language"]]["no_reports"])
+                continue
+            for num, det in data.items():
+                print(f"\n--- {num} ---")
+                for k, v in det.items():
+                    print(f"{k}: {v}")
             input("Devam etmek için Enter'a bas...")
-        elif choice == "4":
-            show_settings()
-        elif choice == "5":
-            print(f"{theme['success']}{LANGUAGES[settings['language']]['goodbye']}{Style.RESET_ALL}")
+        elif choice == '4':
+            while True:
+                s_choice = input(LANGUAGES[settings["language"]]["settings"])
+                if s_choice == '1':
+                    lang = input("Dil seç (tr/en/es): ").lower()
+                    if lang in LANGUAGES:
+                        settings["language"] = lang
+                        print(LANGUAGES[lang]["language_selected"].format(lang))
+                    else:
+                        print("Desteklenmeyen dil!")
+                elif s_choice == '2':
+                    theme = input("Tema seç (dark/neon/pastel): ").lower()
+                    if theme in THEMES:
+                        settings["theme"] = theme
+                        print(LANGUAGES[settings["language"]]["theme_selected"].format(theme))
+                    else:
+                        print("Desteklenmeyen tema!")
+                elif s_choice == '3':
+                    break
+                else:
+                    print(LANGUAGES[settings["language"]]["invalid_choice"])
+        elif choice == '5':
+            print(LANGUAGES[settings["language"]]["goodbye"])
             break
         else:
-            print(f"{theme['error']}{LANGUAGES[settings['language']]['invalid_choice']}{Style.RESET_ALL}")
+            print(Fore.RED + LANGUAGES[settings["language"]]["invalid_choice"])
 
 if __name__ == "__main__":
     main()
