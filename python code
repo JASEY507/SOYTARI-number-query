@@ -11,7 +11,6 @@ from colorama import Fore, Style, init
 from tqdm import tqdm
 import phonenumbers
 from phonenumbers import geocoder, carrier, number_type
-import signal
 
 # Kütüphane yüklemesi (Varsa kurar)
 def install_libraries(packages):
@@ -36,8 +35,8 @@ init(autoreset=True)
 LANGUAGES = {
     "tr": {
         "welcome": "Selam! SoytariNumber ile numaraların sırlarını çözeceğiz, hazır mısın? 🚀",
-        "menu": "=== SoytariNumber Menü ===\n1) Numara sorgula\n2) Toplu analiz\n3) Raporları göster\n4) Ayarlar\n5) Çıkış\n6) SMS Bombardımanı\nSeçimini yap: ",
-        "invalid_choice": "Geçersiz seçim, 1-6 arası sayı gir! 😅",
+        "menu": "=== SoytariNumber Menü ===\n1) Numara sorgula\n2) Toplu analiz\n3) Raporları göster\n4) Ayarlar\n5) Çıkış\nSeçimini yap: ",
+        "invalid_choice": "Geçersiz seçim, 1-5 arası sayı gir! 😅",
         "enter_number": "Numarayı uluslararası formatta gir (+905301234567): ",
         "invalid_number": "Bi sıkıntı var numarada, düzgün format gir! 🚫",
         "analyzing": "Numara analiz ediliyor...",
@@ -57,16 +56,11 @@ LANGUAGES = {
         "social_media_likely": "Telegram, Signal veya WhatsApp kullanıyor olabilir!",
         "social_media_voip": "VoIP numarası, Skype ya da Discord olabilir.",
         "social_media_uncertain": "Sosyal medya durumu belirsiz.",
-        "sms_bombardiman_start": "SMS Bombardımına başlıyoruz! 🚨 Numara: {}",
-        "sms_bombardiman_error": "SMS Bombardımında hata: {}",
-        "sms_bombardiman_success": "SMS Bombardımanı başlatıldı, mesajlar gönderiliyor! 💥",
-        "sms_bombardiman_stop": "SMS Bombardımanı durduruldu! 🛑",
-        "sms_bombardiman_prompt": "Durdurmak için 'durdur' yaz veya Enter'a basarak devam et: ",
     },
     "en": {
         "welcome": "Yo! Ready to crack number secrets with SoytariNumber? 🚀",
-        "menu": "=== SoytariNumber Menu ===\n1) Analyze number\n2) Bulk analysis\n3) View reports\n4) Settings\n5) Exit\n6) SMS Bombardment\nChoice: ",
-        "invalid_choice": "Invalid choice, enter a number between 1-6! 😅",
+        "menu": "=== SoytariNumber Menu ===\n1) Analyze number\n2) Bulk analysis\n3) View reports\n4) Settings\n5) Exit\nChoice: ",
+        "invalid_choice": "Invalid choice, enter a number between 1-5! 😅",
         "enter_number": "Enter the number in international format (+905301234567): ",
         "invalid_number": "Something's wrong, enter a proper format! 🚫",
         "analyzing": "Analyzing number...",
@@ -86,16 +80,11 @@ LANGUAGES = {
         "social_media_likely": "Likely on Telegram, Signal or WhatsApp!",
         "social_media_voip": "VoIP number, maybe Skype or Discord.",
         "social_media_uncertain": "Social media usage unclear.",
-        "sms_bombardiman_start": "Starting SMS Bombardment! 🚨 Number: {}",
-        "sms_bombardiman_error": "SMS Bombardment error: {}",
-        "sms_bombardiman_success": "SMS Bombardment started, messages being sent! 💥",
-        "sms_bombardiman_stop": "SMS Bombardment stopped! 🛑",
-        "sms_bombardiman_prompt": "Type 'stop' to halt or press Enter to continue: ",
     },
     "es": {
         "welcome": "¡Ey! ¿Listo para descubrir los secretos con SoytariNumber? 🚀",
-        "menu": "=== Menú SoytariNumber ===\n1) Analizar número\n2) Análisis masivo\n3) Ver informes\n4) Configuraciones\n5) Salir\n6) Bombardeo de SMS\nElección: ",
-        "invalid_choice": "Elección inválida, mete un número entre 1-6! 😅",
+        "menu": "=== Menú SoytariNumber ===\n1) Analizar número\n2) Análisis masivo\n3) Ver informes\n4) Configuraciones\n5) Salir\nElección: ",
+        "invalid_choice": "Elección inválida, mete un número entre 1-5! 😅",
         "enter_number": "Ingresa el número en formato internacional (+905301234567): ",
         "invalid_number": "Formato incorrecto! 🚫",
         "analyzing": "Analizando número...",
@@ -115,11 +104,6 @@ LANGUAGES = {
         "social_media_likely": "Probablemente usa Telegram, Signal o WhatsApp!",
         "social_media_voip": "Número VoIP, puede ser Skype o Discord.",
         "social_media_uncertain": "Uso de redes sociales incierto.",
-        "sms_bombardiman_start": "¡Iniciando bombardeo de SMS! 🚨 Número: {}",
-        "sms_bombardiman_error": "Error en bombardeo de SMS: {}",
-        "sms_bombardiman_success": "¡Bombardeo de SMS iniciado, los mensajes se están enviando! 💥",
-        "sms_bombardiman_stop": "¡Bombardeo de SMS detenido! 🛑",
-        "sms_bombardiman_prompt": "Escribe 'detener' para parar o presiona Enter para continuar: ",
     }
 }
 
@@ -159,7 +143,7 @@ NUM_TYPE_MAP = {
     7: {"tr": "VoIP numarası, teknoloji meraklısı!", "en": "VoIP number, tech enthusiast!", "es": "¡Número VoIP, entusiasta de la tecnología!"},
 }
 
-SPAM_PREFIXES = ["+4470", "+1202", "+1900"]
+SPAM_PREFIXES = ["+4470", "+1202", "+1900"] 
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -262,7 +246,7 @@ def phoneinfoga_style_search(number):
     results = []
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124"}
     search_query = number.replace('+', '')
-    alt_query = number[1:]
+    alt_query = number[1:]  # + olmadan format
 
     # 1. WhoCalledMe taraması
     try:
@@ -322,111 +306,20 @@ def phoneinfoga_style_search(number):
     except Exception as e:
         results.append(f"ShouldIAnswer: Hata - {str(e)}")
 
-    # 5. KimAran taraması
+    # 5. TelefonKodu (Türkiye özel)
     try:
-        url = f"https://www.kimaran.com/numara/{alt_query}"
-        response = requests.get(url, headers=headers, timeout=10)
+        url = f"https://www.telefonkodu.com/numara/{alt_query}"
+        response = requests.get(url, headers=headers, timeout=5)
         soup = BeautifulSoup(response.text, "html.parser")
-        info = soup.find('div', class_='number-info')
+        info = soup.find('div', class_='phone-info')
         if info:
-            results.append(f"KimAran: {info.text.strip()[:100]}...")
+            results.append(f"TelefonKodu: {info.text.strip()[:100]}...")
         else:
-            results.append("KimAran: Bilgi bulunamadı.")
+            results.append("TelefonKodu: Bilgi bulunamadı.")
     except Exception as e:
-        results.append(f"KimAran: Hata - {str(e)}")
+        results.append(f"TelefonKodu: Hata - {str(e)}")
 
     return "\n".join(results) or "PhoneInfoga tarzı sonuç: Hiçbir kaynakta bilgi bulunamadı."
-
-def sms_bombardiman(number):
-    lang = settings["language"]
-    theme = THEMES[settings["theme"]]
-    slow_print(LANGUAGES[lang]["sms_bombardiman_start"].format(number), color=theme["highlight"])
-    
-    try:
-        # Enough-Reborn reposunu klonla
-        repo_dir = "sms_tool"
-        if not os.path.exists(repo_dir):
-            slow_print("SMS aracı indiriliyor...", color=theme["primary"])
-            result = subprocess.run(["git", "clone", "https://github.com/tingirifistik/Enough-Reborn.git", repo_dir], capture_output=True, text=True)
-            if result.returncode != 0:
-                raise Exception(f"Git clone hatası: {result.stderr}")
-        
-        # Repo içeriğini kontrol et
-        possible_files = ["enough.py", "main.py", "sms.py"]  # Olası dosya adları
-        enough_path = None
-        for root, _, files in os.walk(repo_dir):
-            for file in possible_files:
-                if file in files:
-                    enough_path = os.path.join(root, file)
-                    slow_print(f"Dosya bulundu: {enough_path}", color=theme["primary"])
-                    break
-            if enough_path:
-                break
-        if not enough_path:
-            raise FileNotFoundError("SMS aracı dosyası (enough.py, main.py veya sms.py) bulunamadı! Repo yapısını kontrol et.")
-        
-        # Bağımlılıkları yükle
-        requirements_path = os.path.join(repo_dir, "requirements.txt")
-        if os.path.exists(requirements_path):
-            slow_print("Bağımlılıklar yükleniyor...", color=theme["primary"])
-            result = subprocess.run([sys.executable, "-m", "pip", "install", "-r", requirements_path], capture_output=True, text=True)
-            if result.returncode != 0:
-                raise Exception(f"Bağımlılık yükleme hatası: {result.stderr}")
-        else:
-            slow_print("Uyarı: requirements.txt bulunamadı, devam ediliyor...", color=theme["error"])
-        
-        # Farklı numara formatlarını dene
-        number_formats = [number, number[1:], "0" + number[1:]]
-        process = None
-        for fmt in number_formats:
-            try:
-                slow_print(f"Numara formatı deneniyor: {fmt}", color=theme["primary"])
-                process = subprocess.Popen(["python3", enough_path, fmt], cwd=os.path.dirname(enough_path), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                slow_print(LANGUAGES[lang]["sms_bombardiman_success"], color=theme["success"])
-                break
-            except Exception as e:
-                slow_print(f"Format başarısız ({fmt}): {str(e)}", color=theme["error"])
-                continue
-        
-        if not process:
-            raise Exception("Tüm numara formatları başarısız oldu!")
-        
-        # Sürecin çıktısını anlık olarak göster
-        while process.poll() is None:
-            line = process.stdout.readline()
-            if line:
-                slow_print(f"SMS Aracı Çıktısı: {line.strip()}", color=theme["primary"])
-            line_err = process.stderr.readline()
-            if line_err:
-                slow_print(f"SMS Aracı Hata Çıktısı: {line_err.strip()}", color=theme["error"])
-            try:
-                user_input = input(LANGUAGES[lang]["sms_bombardiman_prompt"]).strip().lower()
-                if user_input in ["durdur", "stop", "detener"]:
-                    process.terminate()
-                    try:
-                        process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                    slow_print(LANGUAGES[lang]["sms_bombardiman_stop"], color=theme["error"])
-                    break
-            except KeyboardInterrupt:
-                process.terminate()
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                slow_print(LANGUAGES[lang]["sms_bombardiman_stop"], color=theme["error"])
-                break
-
-        # Hata mesajlarını kontrol et
-        stdout, stderr = process.communicate()
-        if stderr:
-            slow_print(LANGUAGES[lang]["sms_bombardiman_error"].format(stderr), color=theme["error"])
-        if stdout:
-            slow_print(f"SMS Aracı Sonucu: {stdout}", color=theme["success"])
-
-    except Exception as e:
-        slow_print(LANGUAGES[lang]["sms_bombardiman_error"].format(str(e)), color=theme["error"])
 
 def get_number_type_desc(num_type):
     return NUM_TYPE_MAP.get(num_type, {"tr": "Bilinmeyen numara!", "en": "Unknown number!", "es": "¡Número desconocido!"})[settings["language"]]
@@ -476,6 +369,7 @@ def analyze_single_number(number):
     online_results = search_number_online(number)
     spam_score = calculate_spam_score(number, online_results)
     area = guess_area(number[3:6]) if country_code == "TR" else "N/A"
+    # PhoneInfoga tarzı ek sorgu
     phoneinfoga_results = phoneinfoga_style_search(number)
 
     details = {
@@ -555,14 +449,6 @@ def main():
         elif choice == '5':
             print(LANGUAGES[settings["language"]]["goodbye"])
             break
-        elif choice == '6':
-            num = input(LANGUAGES[settings["language"]]["enter_number"])
-            num = format_number(num)
-            if not num:
-                print(Fore.RED + LANGUAGES[settings["language"]]["invalid_number"])
-                continue
-            sms_bombardiman(num)
-            input("Devam etmek için Enter'a bas...")
         else:
             print(Fore.RED + LANGUAGES[settings["language"]]["invalid_choice"])
 
