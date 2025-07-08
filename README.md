@@ -33,6 +33,7 @@ SoytariNumber’ı Termux ya da Linux’ta (Kali, Ubuntu gibi) çalıştırmak i
 İlk adım, projeyi cihazına çekmek. Aşağıdaki komutla GitHub’dan indir:
 -----
 git clone https://github.com/JASEY507/SOYTARI-number-query.git
+--
 cd SOYTARI-number-query
 ----
 
