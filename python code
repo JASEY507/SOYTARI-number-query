@@ -445,7 +445,7 @@ def main():
             print(f"\n{theme['primary']}=== Kaydedilmiş Raporlar ==={Style.RESET_ALL}")
             reports = [f for f in os.listdir() if f.startswith("numara_raporu_") and f.endswith(".txt")]
             print("\n".join(f"{i+1}. {report}" for i, report in enumerate(reports)) or LANGUAGES[lang]["no_reports"])
-            input9            input("Devam için Enter'a bas...")
+            input("Devam için Enter'a bas...")
         elif choice == "4":
             show_settings()
         elif choice == "5":
