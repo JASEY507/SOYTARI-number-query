@@ -30,94 +30,74 @@ SoytariNumber’ı Termux veya Kali Linux’ta çalıştırmak için bu 3 adım�
 
 
 
-1. SoytariNumber’ı İndir
-GitHub’dan projeyi çek ve klasöre gir:
-Komut:
+İlk Olarak Şunu Yazın 
 
----
-git clone https://github.com/JASEY507/SOYTARI-number-query.git
---
-cd SOYTARI-number-query
---
-
-
-Not: "Klasör zaten var" hatası alırsan, sil ve tekrar indir:
-Komut:
-
----
-rm -rf SOYTARI-number-query
-git clone https://github.com/JASEY507/SOYTARI-number-query.git
---
-cd SOYTARI-number-query
-----
-
-2. Kütüphaneleri Kur
-Programın çalışması için gereken Python kütüphanelerini yükle:
-Termux için:
-
----
-pip3 install phonenumbers colorama tqdm requests beautifulsoup4
------
-
-
-Kali Linux için:
-
----
-pip3 install phonenumbers colorama tqdm requests beautifulsoup4 --break-system-packages
------
-
-
-
-3. SoytariNumber’ı Çalıştır
-Programı başlat (ana dosya main.py):
-Komut:
-
----
-python3 main.py
----
-
-
-Not: Dosya adını doğrulamak için:
-Komut:
-
----
-ls
----
-
-
-Eğer dosya main.py değilse (örneğin, başka bir isim), listedeki doğru adı kullan:
-Komut:
-
------
-python3 <doğru_dosya_adı>.py
------
-
-PDF Raporları için LaTeX (İsteğe Bağlı)
-Raporları PDF olarak kaydetmek istersen LaTeX kur. Gerek yoksa bu adımı atla:
-Termux için:
-
----
-pkg install texlive-installer
----
-
-Kali Linux için:
 
 ----
-sudo apt update
-sudo apt install texlive-latex-base latexmk
+cd ~ && rm -rf SOYTARI-number-query && git clone https://github.com/JASEY507/SOYTARI-number-query.git && cd SOYTARI-number-query && python3 -m venv soytari_venv && source soytari_venv/bin/activate && pip install --upgrade pip phonenumbers colorama tqdm requests beautifulsoup4 && python3 soytarinumber.py
+-----
+
+
+Sonrasında Projeyi Çalıştırmak İçin:
+
+-----
+python3 'python code'
 ---
-
-📋 Nasıl Kullanılır?
-
-
-SoytariNumber açılınca menüden seçim yap.  
-Tek numara sorgula veya bir dosyadaki numaraları toplu analiz et.  
-Sonuçlar metin dosyasına, LaTeX kurduysan PDF’e kaydedilir.
+ ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ 
+Bu Projede Bir Hata Yada Eklenmesini İstedğiniz Birşey Varsa  İnstagram: @soytariomer.17
 
 
 
 
-🤝 Katkıda Bulun
-Fikirlerinle SoytariNumber’ı geliştir! GitHub Issues sayfasında paylaş.
-📜 Lisans
-MIT Lisansı. Detaylar için LICENSE dosyasını oku.
+
+
+
+
+
+
+
+
+
+
+
+SoytariNumber 🕵️‍♀️
+
+
+
+SoytariNumber is a powerful tool that analyzes phone numbers! Instantly learn the country, operator, type (mobile/landline), and spam risk of a number. It supports Turkish, English, and Spanish languages and offers a stylish experience with dark, neon, or pastel themes.
+🌟 Features
+
+
+📞 Country, operator, and region information.
+
+
+🌐Spam/fraud detection.
+
+
+📊 Bulk number analysis.
+
+
+📄 Text or PDF reports.
+
+
+🎨 Dark, neon, and pastel themes.
+
+
+🌍 Supports Turkish, English, and Spanish languages.
+
+
+🛠️ SoytariNumber Setup (Termux and Kali Linux)
+Follow these 3 steps to run SoytariNumber on Termux or Kali Linux. It’s 100% functional, simple, and fast!
+
+
+
+First, run this command:
+cd ~ && rm -rf SOYTARI-number-query && git clone https://github.com/JASEY507/SOYTARI-number-query.git && cd SOYTARI-number-query && python3 -m venv soytari_venv && source soytari_venv/bin/activate && pip install --upgrade pip phonenumbers colorama tqdm requests beautifulsoup4 && python3 soytarinumber.py
+
+
+
+Then, to run the project:
+python3 'python code'
+
+
+If you find any bugs or want to request features, contact me on Instagram: @soytariomer.17
