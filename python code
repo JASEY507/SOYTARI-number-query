@@ -322,21 +322,18 @@ def phoneinfoga_style_search(number):
     except Exception as e:
         results.append(f"ShouldIAnswer: Hata - {str(e)}")
 
-    # 5. Tellows taraması
+    # 5. KimAran taraması
     try:
-        url = f"https://www.tellows.com/num/{search_query}"
-        response = requests.get(url, headers=headers, timeout=5)
+        url = f"https://www.kimaran.com/numara/{alt_query}"
+        response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
-        score = soup.find('span', class_='tellows-score')
-        comments = soup.find_all('div', class_='comment')
-        if score or comments:
-            score_text = score.text.strip() if score else "Puan bulunamadı"
-            comment_text = ' | '.join([c.text.strip()[:100] + '...' for c in comments[:2]]) if comments else "Yorum yok"
-            results.append(f"Tellows: Puan: {score_text} | {comment_text}")
+        info = soup.find('div', class_='number-info')
+        if info:
+            results.append(f"KimAran: {info.text.strip()[:100]}...")
         else:
-            results.append("Tellows: Bilgi bulunamadı.")
+            results.append("KimAran: Bilgi bulunamadı.")
     except Exception as e:
-        results.append(f"Tellows: Hata - {str(e)}")
+        results.append(f"KimAran: Hata - {str(e)}")
 
     return "\n".join(results) or "PhoneInfoga tarzı sonuç: Hiçbir kaynakta bilgi bulunamadı."
 
@@ -355,13 +352,18 @@ def sms_bombardiman(number):
                 raise Exception(f"Git clone hatası: {result.stderr}")
         
         # Repo içeriğini kontrol et
+        possible_files = ["enough.py", "main.py", "sms.py"]  # Olası dosya adları
         enough_path = None
         for root, _, files in os.walk(repo_dir):
-            if "enough.py" in files:
-                enough_path = os.path.join(root, "enough.py")
+            for file in possible_files:
+                if file in files:
+                    enough_path = os.path.join(root, file)
+                    slow_print(f"Dosya bulundu: {enough_path}", color=theme["primary"])
+                    break
+            if enough_path:
                 break
         if not enough_path:
-            raise FileNotFoundError("enough.py dosyası repo içinde bulunamadı! Repo yapısını kontrol et.")
+            raise FileNotFoundError("SMS aracı dosyası (enough.py, main.py veya sms.py) bulunamadı! Repo yapısını kontrol et.")
         
         # Bağımlılıkları yükle
         requirements_path = os.path.join(repo_dir, "requirements.txt")
@@ -383,6 +385,7 @@ def sms_bombardiman(number):
                 slow_print(LANGUAGES[lang]["sms_bombardiman_success"], color=theme["success"])
                 break
             except Exception as e:
+                slow_print(f"Format başarısız ({fmt}): {str(e)}", color=theme["error"])
                 continue
         
         if not process:
@@ -393,6 +396,9 @@ def sms_bombardiman(number):
             line = process.stdout.readline()
             if line:
                 slow_print(f"SMS Aracı Çıktısı: {line.strip()}", color=theme["primary"])
+            line_err = process.stderr.readline()
+            if line_err:
+                slow_print(f"SMS Aracı Hata Çıktısı: {line_err.strip()}", color=theme["error"])
             try:
                 user_input = input(LANGUAGES[lang]["sms_bombardiman_prompt"]).strip().lower()
                 if user_input in ["durdur", "stop", "detener"]:
